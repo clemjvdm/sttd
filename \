@@ -1,0 +1,62 @@
+use std::io::prelude::*;
+use serde_json;
+use serde::{Serialize, Deserialize};
+use std::fs::OpenOptions;
+
+#[derive(Serialize, Deserialize)]
+struct ToDoItem {
+    name: String,
+    todos: Vec<ToDoItem>,
+    done: bool,
+}
+
+impl ToDoItem {
+    fn new(name: String) -> Self {
+        ToDoItem {name, todos: Vec::new(), done: false}        
+    }    
+   
+    fn add_child (&mut self, todo: ToDoItem) {
+        self.todos.push(todo);
+    }
+}
+
+
+#[derive(Serialize, Deserialize)]
+struct ToDoList {
+    path: String,
+    name: String,
+    todos: Vec<ToDoItem>,
+}
+
+
+impl ToDoList {
+    fn new(name: String, path: String) -> Self {
+        let todos = Vec::new(); 
+        ToDoList {path, name, todos}
+    }
+
+    fn load(path: String) -> Self {
+        let json = std::fs::read_to_string(path).unwrap();
+        let obj: ToDoList = serde_json::from_str(&json).unwrap();
+        return obj;
+    }
+
+    fn save(&self) {
+        let json = serde_json::to_string(&self).unwrap();
+        let mut file = OpenOptions::new()
+                    .read(true)
+                    .write(true)
+                    .create(true)
+                    .open(&self.path)
+                    .expect("Could not open todo file.");  
+        file.write_all(json.as_bytes()).unwrap();
+    }
+
+    fn add_todo(&mut self, todo: ToDoItem) {
+        self.todos.push(todo);
+    }
+
+    fn del_todo(&mut self, index: usize) {
+        self.todos.remove(index);
+    }
+}
